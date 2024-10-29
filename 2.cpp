@@ -5,27 +5,34 @@
 using namespace std;
 
 struct Node {
-    int data; 
+    int data;
     Node* next;
 };
 
 struct Set {
-    Node* head;
+    Node** table;
+    int size;
 
-    Set() : head(nullptr) {}
+    Set(int tableSize) : size(tableSize) {
+        table = new Node*[size]();
+    }
 
-    // Добавление элемента в множество
+    int hash(int value) const {
+        return value % size;
+    }
+
     void add(int value) {
+        int index = hash(value);
         if (!contains(value)) {
-            Node* newNode = new Node{value, head};
-            head = newNode;
+            Node* newNode = new Node{value, table[index]};
+            table[index] = newNode;
         }
     }
 
-    // Удаление элемента из множества
     void remove(int value) {
-        Node** current = &head;
-        while (*current) {
+        int index = hash(value);
+        Node** current = &table[index];
+        while (*current!=nullptr) {
             if ((*current)->data == value) {
                 Node* toDelete = *current;
                 *current = (*current)->next;
@@ -36,9 +43,9 @@ struct Set {
         }
     }
 
-    // Проверка наличия элемента в множестве
-    bool contains(int value) {
-        Node* current = head;
+    bool contains(int value) const {
+        int index = hash(value);
+        Node* current = table[index];
         while (current) {
             if (current->data == value) {
                 return true;
@@ -48,18 +55,30 @@ struct Set {
         return false;
     }
 
-    // Запись в файл
-    void saveToFile(const char* filename) {
+    ~Set() {
+        for (int i = 0; i < size; ++i) {
+            Node* current = table[i];
+            while (current) {
+                Node* toDelete = current;
+                current = current->next;
+                delete toDelete;
+            }
+        }
+        delete[] table;
+    }
+
+    void saveToFile(const char* filename) const {
         ofstream file(filename);
-        Node* current = head;
-        while (current) {
-            file << current->data << endl;
-            current = current->next;
+        for (int i = 0; i < size; ++i) {
+            Node* current = table[i];
+            while (current) {
+                file << current->data << endl;
+                current = current->next;
+            }
         }
         file.close();
     }
 
-    // Считывание из файла
     void loadFromFile(const char* filename) {
         ifstream file(filename);
         int value;
@@ -67,15 +86,6 @@ struct Set {
             add(value);
         }
         file.close();
-    }
-
-    // Освобождение памяти
-    ~Set() {
-        while (head) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
     }
 };
 
@@ -100,13 +110,13 @@ int main(int argc, char* argv[]) {
     const string command = argv[4];
     int value = stoi(argv[5]);
 
-    Set set;
+    Set set(100); // Выбор размера хеш-таблицы
     set.loadFromFile(filename);
 
-    // Пример выполнения команд, можно изменить по необходимости
-    executeCommand(set, command, value); // пример команды
+    // Пример выполнения команд
+    executeCommand(set, command, value);
 
-    set.saveToFile(filename); // Сохраняем изменения
+    set.saveToFile(filename);
 
     return 0;
 }
