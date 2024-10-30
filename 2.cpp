@@ -22,12 +22,23 @@ struct Set {
     }
 
     void add(int value) {
+        if (contains(value)) {
+            cout << "Уже есть значение в set:" << value << endl;
+            return;
+        }
+
         int index = hash(value);
-        if (!contains(value)) {
-            Node* newNode = new Node{value, table[index]};
+        Node* newNode = new Node{value, nullptr};
+
+        if (table[index] == nullptr) {
+            table[index] = newNode; 
+        } 
+        else {
+            newNode->next = table[index];
             table[index] = newNode;
         }
     }
+
 
     void remove(int value) {
         int index = hash(value);
